@@ -63,9 +63,6 @@ def speak_thread_func(text):
         data = sound_file.read(dtype='int16')
         sounddevice.play(data, sound_file.samplerate)
         sounddevice.wait()
-        
-    print('speak done')
-
 
 def imlistening():
     choice = random.randint(1, 3)
