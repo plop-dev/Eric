@@ -262,4 +262,4 @@ while True:
             speak(f"Now playing: {current_song}")
             previous_song = current_song
 
-    time.sleep(2)
+    time.sleep(3)
