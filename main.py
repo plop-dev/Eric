@@ -246,7 +246,7 @@ m = sr.Microphone()
 with m as source:
     main_r.adjust_for_ambient_noise(source)
 
-stop_main_listening = main_r.listen_in_background(m, main_listen, 2)
+stop_main_listening = main_r.listen_in_background(m, main_listen, 1.5)
 
 previous_song = None
 while True:
