@@ -157,7 +157,7 @@ def discuss(text, r, audio):
                 
                 _text = discuss_user_query
                 print("discuss", _text)
-                if _text.__contains__('bye') or _text.__contains__('goodbye') or _text.__contains__('nevermind'):
+                if ['bye', 'goodbye'] in _text:
                     choice = random.randint(1, 2)
                     playsound(os.path.dirname(__file__) + f'/bye/{choice}.mp3')
                     print("stop discussion")
