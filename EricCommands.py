@@ -82,6 +82,13 @@ def search_song(query: str):
     result = result_raw['tracks']['items'][0][list(result_raw['tracks']['items'][0].keys())[0]]['uri']
     print(result)
     return result
+
+
+class GetSpotifyVolume(Command):
+    def primary(self):
+        current_playback = sp.current_playback()
+        current_volume = current_playback['device']['volume_percent']
+        return int(current_volume)
     
 class SearchSong(Command):        
     def primary(self):

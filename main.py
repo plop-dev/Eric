@@ -16,6 +16,7 @@ import time
 import EricCommands
 import EricUtils
 import threading
+import numpy as np
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -30,6 +31,7 @@ sp = spotipy.Spotify(client_credentials_manager=SpotifyOAuth(client_id=SPOTIFY_C
 
 user_query: str
 
+state = 'normal'
 sound_file = BytesIO()
 
 def get_audio_file(text, path):
@@ -79,7 +81,22 @@ def repeat():
 def noresult():
     choice = random.randint(1, 2)
     playsound(os.path.dirname(__file__) + f'/noresults/{choice}.mp3')
-    
+
+def listening_state():
+    while state == 'listening':
+        recording = sounddevice.rec(int(1 * 44100), samplerate=44100, channels=2)
+        sounddevice.wait()
+        rms = np.sqrt(np.mean(recording ** 2))
+        
+        if rms > 0.001:
+            print('lower volume')
+            EricCommands.SetSpotifyVolume('set spotify volume to 5%')
+            time.sleep(1)
+        else:
+            print('volume normal')
+            current_volume = EricCommands.GetSpotifyVolume('')
+            EricCommands.SetSpotifyVolume(f'set spotify volume to {current_volume}%')
+
 
 def search(query):
     url = f"https://www.google.com/search?q={query}"
@@ -157,7 +174,7 @@ def discuss(text, r, audio):
                 
                 _text = discuss_user_query
                 print("discuss", _text)
-                if ['bye', 'goodbye'] in _text:
+                if _text.__contains__('bye') or _text.__contains__('goodbye'):
                     choice = random.randint(1, 2)
                     playsound(os.path.dirname(__file__) + f'/bye/{choice}.mp3')
                     print("stop discussion")
@@ -196,6 +213,8 @@ command_map = {
 }
 
 def listen():
+    listening_state_thread: threading.Thread = None
+    
     r = sr.Recognizer()
     with sr.Microphone() as source:
         r.adjust_for_ambient_noise(source)
@@ -210,21 +229,39 @@ def listen():
         
         print("User:", user_query)
     
-        for cmd, func_class in command_map.items():
-            command = cmd.replace(';', ' in user_query')
-            if eval(command):
-                if not func_class(user_query).primary():
+        if user_query.__contains__('set state to') or user_query.__contains__('set states to'):
+            global state
+            if user_query.__contains__('set state to'):
+                state = user_query.split('set state to ')[1].replace('.', '').replace(',', '')
+            elif user_query.__contains__('set states to'):
+                state = user_query.split('set states to ')[1].replace('.', '').replace(',', '')
+        
+        if state == 'normal':
+            for cmd, func_class in command_map.items():
+                command = cmd.replace(';', ' in user_query')
+                if eval(command):
+                    if not func_class(user_query).primary():
+                        return
+                    else:
+                        try:
+                            speak(func_class(user_query).primary())
+                        except EricUtils.UserQueryError as err:
+                            repeat()
+                            listen()
                     return
-                else:
-                    try:
-                        speak(func_class(user_query).primary())
-                    except EricUtils.UserQueryError as err:
-                        repeat()
-                        listen()
-                return
 
-        justwaitasec()
-        discuss(user_query, r, audio)
+            justwaitasec()
+            discuss(user_query, r, audio)
+        elif state == 'listening':
+            if listening_state_thread is not None:
+                if listening_state_thread.is_alive():
+                    print('already running')
+                    return
+
+            print('starting thread')
+            listening_state_thread = threading.Thread(target=listening_state, daemon=True)
+            listening_state_thread.start()
+                
     except sr.RequestError as e:
         print("Could not request results from Whisper API")
 
@@ -246,7 +283,7 @@ m = sr.Microphone()
 with m as source:
     main_r.adjust_for_ambient_noise(source)
 
-stop_main_listening = main_r.listen_in_background(m, main_listen, 1.5)
+stop_main_listening = main_r.listen_in_background(m, main_listen, 2)
 
 previous_song = None
 while True:
