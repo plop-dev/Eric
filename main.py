@@ -90,12 +90,12 @@ def listening_state():
         
         if rms > 0.001:
             print('lower volume')
-            EricCommands.SetSpotifyVolume('set spotify volume to 5%')
-            time.sleep(1)
+            EricCommands.SetSpotifyVolume('set spotify volume to 10%').primary()
         else:
             print('volume normal')
-            current_volume = EricCommands.GetSpotifyVolume('')
-            EricCommands.SetSpotifyVolume(f'set spotify volume to {current_volume}%')
+            EricCommands.SetSpotifyVolume(f'set spotify volume to 30%').primary()
+
+        time.sleep(1)
 
 
 def search(query):
@@ -237,6 +237,8 @@ def listen():
                 state = user_query.split('set states to ')[1].replace('.', '').replace(',', '')
         
         if state == 'normal':
+            if user_query.__contains__('set state to') or user_query.__contains__('set states to'):
+                return
             for cmd, func_class in command_map.items():
                 command = cmd.replace(';', ' in user_query')
                 if eval(command):

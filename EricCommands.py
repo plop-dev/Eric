@@ -88,7 +88,7 @@ class GetSpotifyVolume(Command):
     def primary(self):
         current_playback = sp.current_playback()
         current_volume = current_playback['device']['volume_percent']
-        return int(current_volume)
+        return current_volume
     
 class SearchSong(Command):        
     def primary(self):
