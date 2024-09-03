@@ -19,20 +19,28 @@ import threading
 import numpy as np
 
 load_dotenv()
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-ELEVEN_API_KEY = os.getenv('ELEVEN_API_KEY')
-SPOTIFY_CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID')
-SPOTIFY_CLIENT_SECRET  = os.getenv('SPOTIFY_CLIENT_SECRET')
-SPOTIFY_DEVICE_ID = os.getenv('SPOTIFY_DEVICE_ID')
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+ELEVEN_API_KEY = os.getenv("ELEVEN_API_KEY")
+SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
+SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
+SPOTIFY_DEVICE_ID = os.getenv("SPOTIFY_DEVICE_ID")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 scope = "user-read-playback-state,user-modify-playback-state"
-sp = spotipy.Spotify(client_credentials_manager=SpotifyOAuth(client_id=SPOTIFY_CLIENT_ID, client_secret=SPOTIFY_CLIENT_SECRET, scope=scope, redirect_uri='http://google.com/callback/'))
+sp = spotipy.Spotify(
+    client_credentials_manager=SpotifyOAuth(
+        client_id=SPOTIFY_CLIENT_ID,
+        client_secret=SPOTIFY_CLIENT_SECRET,
+        scope=scope,
+        redirect_uri="http://google.com/callback/",
+    )
+)
 
 user_query: str
 
-state = 'normal'
+state = "normal"
 sound_file = BytesIO()
+
 
 def get_audio_file(text, path):
     speech_response = client.audio.speech.create(
@@ -43,10 +51,12 @@ def get_audio_file(text, path):
     )
     speech_response.stream_to_file(path)
 
+
 def speak(text):
-    print('sending speech input to tts')
+    print("sending speech input to tts")
     speech_thread = threading.Thread(target=speak_thread_func, args=(text,))
     speech_thread.run()
+
 
 def speak_thread_func(text):
     speech_response = client.audio.speech.create(
@@ -55,45 +65,50 @@ def speak_thread_func(text):
         input=text,
         speed=1.0,
     )
-    
+
     buffer = io.BytesIO()
     for chunk in speech_response.iter_bytes(chunk_size=2048):
         buffer.write(chunk)
     buffer.seek(0)
-    
-    with soundfile.SoundFile(buffer, 'r') as sound_file:
-        data = sound_file.read(dtype='int16')
+
+    with soundfile.SoundFile(buffer, "r") as sound_file:
+        data = sound_file.read(dtype="int16")
         sounddevice.play(data, sound_file.samplerate)
         sounddevice.wait()
 
+
 def imlistening():
     choice = random.randint(1, 3)
-    playsound(os.path.dirname(__file__) + f'/listening/{choice}.mp3')
+    playsound(os.path.dirname(__file__) + f"/listening/{choice}.mp3")
+
 
 def justwaitasec():
     choice = random.randint(1, 3)
-    playsound(os.path.dirname(__file__) + f'/justwaitasec/{choice}.mp3')
+    playsound(os.path.dirname(__file__) + f"/justwaitasec/{choice}.mp3")
+
 
 def repeat():
     choice = random.randint(1, 2)
-    playsound(os.path.dirname(__file__) + f'/repeat/{choice}.mp3')
+    playsound(os.path.dirname(__file__) + f"/repeat/{choice}.mp3")
+
 
 def noresult():
     choice = random.randint(1, 2)
-    playsound(os.path.dirname(__file__) + f'/noresults/{choice}.mp3')
+    playsound(os.path.dirname(__file__) + f"/noresults/{choice}.mp3")
+
 
 def listening_state():
-    while state == 'listening':
+    while state == "listening":
         recording = sounddevice.rec(int(1 * 44100), samplerate=44100, channels=2)
         sounddevice.wait()
-        rms = np.sqrt(np.mean(recording ** 2))
-        
+        rms = np.sqrt(np.mean(recording**2))
+
         if rms > 0.001:
-            print('lower volume')
-            EricCommands.SetSpotifyVolume('set spotify volume to 10%').primary()
+            print("lower volume")
+            EricCommands.SetSpotifyVolume("set spotify volume to 10%").primary()
         else:
-            print('volume normal')
-            EricCommands.SetSpotifyVolume(f'set spotify volume to 30%').primary()
+            print("volume normal")
+            EricCommands.SetSpotifyVolume(f"set spotify volume to 30%").primary()
 
         time.sleep(1)
 
@@ -101,7 +116,7 @@ def listening_state():
 def search(query):
     url = f"https://www.google.com/search?q={query}"
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0'
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0"
     }
     print("searching up:", query)
     response = requests.get(url, headers=headers)
@@ -118,14 +133,14 @@ def search(query):
                 answer = answer.findChild().get_text()
             else:
                 answer = answer.get_text()
-            
+
             if description:
                 description = description.get_text()
             else:
                 description = "None provided."
-            
+
             print(f"Answer: {answer}\nDescription: {description}")
-            
+
             # text_responseRAW = client.chat.completions.create(
             #     model="gpt-3.5-turbo",
             #     messages=[
@@ -139,7 +154,7 @@ def search(query):
         elif long_answer:
             long_answer = long_answer.get_text()
             print(f"Long Answer: {long_answer}")
-            
+
             # text_responseRAW = client.chat.completions.create(
             #     model="gpt-3.5-turbo",
             #     messages=[
@@ -154,7 +169,15 @@ def search(query):
 
 
 def discuss(text, r, audio):
-    recent_keywords = ["search up", "look up", "recent", "latest", "current", "in the last few years", 'right now', 'newest', 'new', 'how old']
+    recent_keywords = [
+        "search up",
+        "look up",
+        "recent",
+        "latest",
+        "current",
+        "in the last few years",
+        "how old",
+    ]
     is_recent = any(keyword in text for keyword in recent_keywords)
     if is_recent:
         for keyword in recent_keywords:
@@ -166,25 +189,32 @@ def discuss(text, r, audio):
         _audio = audio
         _text = text
         _r = r
-        conversation = [{"role": "system", "content": "Your name is Eric and you're kind, friendly and loyal. My name is plop, we've already met. Don't make your answers too long."},]
+        conversation = [
+            {
+                "role": "system",
+                "content": "Your name is Eric and you're kind, friendly and loyal. My name is plop, we've already met. Don't make your answers too long.",
+            },
+        ]
         while True:
-            discuss_user_queryRAW: str = _r.recognize_whisper_api(_audio, api_key=OPENAI_API_KEY).lower().replace(',', '')
+            discuss_user_queryRAW: str = (
+                _r.recognize_whisper_api(_audio, api_key=OPENAI_API_KEY)
+                .lower()
+                .replace(",", "")
+            )
             if discuss_user_queryRAW.__len__() >= 5:
-                discuss_user_query = ' '.join(discuss_user_queryRAW.lower().split(' '))
-                
+                discuss_user_query = " ".join(discuss_user_queryRAW.lower().split(" "))
+
                 _text = discuss_user_query
                 print("discuss", _text)
-                if _text.__contains__('bye') or _text.__contains__('goodbye'):
+                if _text.__contains__("bye") or _text.__contains__("goodbye"):
                     choice = random.randint(1, 2)
-                    playsound(os.path.dirname(__file__) + f'/bye/{choice}.mp3')
+                    playsound(os.path.dirname(__file__) + f"/bye/{choice}.mp3")
                     print("stop discussion")
                     break
                 conversation.append({"role": "user", "content": _text})
                 text_responseRAW = client.chat.completions.create(
                     model="gpt-3.5-turbo-0125",
-                    messages=[
-                        *conversation
-                    ],
+                    messages=[*conversation],
                 )
                 text_response = text_responseRAW.choices[0].message.content
                 print(text_response)
@@ -192,7 +222,7 @@ def discuss(text, r, audio):
                 conversation.append({"role": "system", "content": text_response})
             else:
                 repeat()
-            
+
             _r = sr.Recognizer()
             with sr.Microphone() as source:
                 _r.adjust_for_ambient_noise(source)
@@ -209,12 +239,13 @@ command_map = {
     "('what is'; or \"what's\";) and 'song'; and 'called'; or 'what song is this';": EricCommands.GetPlayingSong,
     "'add'; and ('to my queue'; or 'to the queue';)": EricCommands.AddSongToQueue,
     "'skip'; and ('this'; or 'the';) and 'song';": EricCommands.SkipSong,
-    "'set the spotify volume to'; or 'set spotify volume to';": EricCommands.SetSpotifyVolume
+    "'set the spotify volume to'; or 'set spotify volume to';": EricCommands.SetSpotifyVolume,
 }
+
 
 def listen():
     listening_state_thread: threading.Thread = None
-    
+
     r = sr.Recognizer()
     with sr.Microphone() as source:
         r.adjust_for_ambient_noise(source)
@@ -224,23 +255,39 @@ def listen():
         print("Done!")
 
     try:
-        user_queryRAW: str = r.recognize_whisper_api(audio, api_key=OPENAI_API_KEY).lower().replace(',', '')
-        user_query = ' '.join(user_queryRAW.lower().split(' '))
-        
+        user_queryRAW: str = (
+            r.recognize_whisper_api(audio, api_key=OPENAI_API_KEY)
+            .lower()
+            .replace(",", "")
+        )
+        user_query = " ".join(user_queryRAW.lower().split(" "))
+
         print("User:", user_query)
-    
-        if user_query.__contains__('set state to') or user_query.__contains__('set states to'):
+
+        if user_query.__contains__("set state to") or user_query.__contains__(
+            "set states to"
+        ):
             global state
-            if user_query.__contains__('set state to'):
-                state = user_query.split('set state to ')[1].replace('.', '').replace(',', '')
-            elif user_query.__contains__('set states to'):
-                state = user_query.split('set states to ')[1].replace('.', '').replace(',', '')
-        
-        if state == 'normal':
-            if user_query.__contains__('set state to') or user_query.__contains__('set states to'):
+            if user_query.__contains__("set state to"):
+                state = (
+                    user_query.split("set state to ")[1]
+                    .replace(".", "")
+                    .replace(",", "")
+                )
+            elif user_query.__contains__("set states to"):
+                state = (
+                    user_query.split("set states to ")[1]
+                    .replace(".", "")
+                    .replace(",", "")
+                )
+
+        if state == "normal":
+            if user_query.__contains__("set state to") or user_query.__contains__(
+                "set states to"
+            ):
                 return
             for cmd, func_class in command_map.items():
-                command = cmd.replace(';', ' in user_query')
+                command = cmd.replace(";", " in user_query")
                 if eval(command):
                     if not func_class(user_query).primary():
                         return
@@ -254,16 +301,18 @@ def listen():
 
             justwaitasec()
             discuss(user_query, r, audio)
-        elif state == 'listening':
+        elif state == "listening":
             if listening_state_thread is not None:
                 if listening_state_thread.is_alive():
-                    print('already running')
+                    print("already running")
                     return
 
-            print('starting thread')
-            listening_state_thread = threading.Thread(target=listening_state, daemon=True)
+            print("starting thread")
+            listening_state_thread = threading.Thread(
+                target=listening_state, daemon=True
+            )
             listening_state_thread.start()
-                
+
     except sr.RequestError as e:
         print("Could not request results from Whisper API")
 
@@ -272,12 +321,17 @@ def main_listen(recogniser, audio):
     try:
         speech: str = recogniser.recognize_google(audio)
         print("main heard", speech)
-        if speech.lower().replace(',', '') == "hey eric":
+        if speech.lower().replace(",", "") == "hey eric":
             listen()
     except sr.UnknownValueError:
+        main_listen()
         pass
     except sr.RequestError as e:
-        print("Could not request results from Google Speech Recognition service; {0}".format(e))
+        print(
+            "Could not request results from Google Speech Recognition service; {0}".format(
+                e
+            )
+        )
 
 
 main_r = sr.Recognizer()
@@ -285,7 +339,7 @@ m = sr.Microphone()
 with m as source:
     main_r.adjust_for_ambient_noise(source)
 
-stop_main_listening = main_r.listen_in_background(m, main_listen, 2)
+stop_main_listening = main_r.listen_in_background(m, main_listen)
 
 previous_song = None
 while True:
@@ -294,7 +348,7 @@ while True:
     except Exception as e:
         print(e)
 
-    if not not results and results['is_playing']:
+    if not not results and results["is_playing"]:
         current_song = EricCommands.GetPlayingSong(None).primary()
 
         if current_song != previous_song:
