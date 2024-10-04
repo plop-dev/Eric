@@ -108,7 +108,7 @@ def listening_state():
             EricCommands.SetSpotifyVolume("set spotify volume to 10%").primary()
         else:
             print("volume normal")
-            EricCommands.SetSpotifyVolume(f"set spotify volume to 30%").primary()
+            EricCommands.SetSpotifyVolume("set spotify volume to 30%").primary()
 
         time.sleep(1)
 
@@ -213,7 +213,7 @@ def discuss(text, r, audio):
                     break
                 conversation.append({"role": "user", "content": _text})
                 text_responseRAW = client.chat.completions.create(
-                    model="gpt-3.5-turbo-0125",
+                    model="gpt-4o",
                     messages=[*conversation],
                 )
                 text_response = text_responseRAW.choices[0].message.content
@@ -294,7 +294,7 @@ def listen():
                     else:
                         try:
                             speak(func_class(user_query).primary())
-                        except EricUtils.UserQueryError as err:
+                        except EricUtils.UserQueryError:
                             repeat()
                             listen()
                     return
@@ -313,7 +313,7 @@ def listen():
             )
             listening_state_thread.start()
 
-    except sr.RequestError as e:
+    except sr.RequestError:
         print("Could not request results from Whisper API")
 
 
@@ -324,7 +324,6 @@ def main_listen(recogniser, audio):
         if speech.lower().replace(",", "") == "hey eric":
             listen()
     except sr.UnknownValueError:
-        main_listen()
         pass
     except sr.RequestError as e:
         print(
@@ -339,7 +338,7 @@ m = sr.Microphone()
 with m as source:
     main_r.adjust_for_ambient_noise(source)
 
-stop_main_listening = main_r.listen_in_background(m, main_listen)
+main_r.listen_in_background(m, main_listen, phrase_time_limit=2)
 
 previous_song = None
 while True:

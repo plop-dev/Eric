@@ -2,6 +2,14 @@
 
 A simple speech assistant capable of having conversations, interacting with Spotify, Google search and performing basic tasks.
 
+## v1
+
+Old python version, won't be updated
+
+## v2
+
+Will use new OpenAI optimised TTS and STT.
+
 ## Upcoming Features
 
 - Google Calendar integration
